@@ -2,7 +2,7 @@
 
 import cvxpy as cp
 import numpy as np
-import pdb  
+import pdb
 
 from utils import *
 
@@ -66,7 +66,39 @@ def grasp_optimization(grasp_normals, points, friction_coeffs, wrench_ext):
     bs = []
     cs = []
     ds = []
+    Fs = []
 
+    h = np.zeros(D * M + 1)
+    h[-1] = 1
+
+    for i in range(M):
+        # friction constraints
+        Ai = np.zeros((D - 1, D * M + 1))
+        Ai[:, i*D: (i + 1)*D - 1] = np.eye(D - 1)
+        ci = np.zeros(D * M + 1)
+        ci[(i+1)*D - 1] = friction_coeffs[i]
+        As.append(Ai)
+        bs.append(np.zeros(D - 1))
+        cs.append(ci)
+        ds.append(0.)
+
+        # norm constraints
+        Ai = np.zeros((D, D * M + 1))
+        Ai[:, i*D: (i + 1)*D] = np.eye(D)
+        As.append(Ai)
+        bs.append(np.zeros(D))
+        cs.append(h)
+        ds.append(0.)
+
+        # Phi
+        Ti = transformations[i]
+        Fs.append(np.concatenate([Ti, cross_matrix(points[i]) @ Ti], axis=0))
+
+    Fs.append(np.zeros((N, 1)))
+    F = np.concatenate(Fs, axis=-1)
+    g = -wrench_ext
+
+    x = cp.Variable(D * M + 1)
 
     x = solve_socp(x, As, bs, cs, ds, F, g, h, verbose=False)
 
@@ -104,7 +136,12 @@ def precompute_force_closure(grasp_normals, points, friction_coeffs):
     #       wrenches and store them as rows in the matrix F. This matrix will be
     #       captured by the returned force_closure() function.
     F = np.zeros((2*N, M*D))
-
+    for i in range(N):
+        w_ext = np.zeros(N)
+        w_ext[i] = 1.
+        F[i] = np.concatenate(grasp_optimization(grasp_normals, points, friction_coeffs, w_ext))
+        w_ext[i] = -1.
+        F[N + i] = np.concatenate(grasp_optimization(grasp_normals, points, friction_coeffs, w_ext))
 
     ########## Your code ends here ##########
 
@@ -122,9 +159,12 @@ def precompute_force_closure(grasp_normals, points, friction_coeffs):
 
         ########## Your code starts here ##########
         # TODO: Compute the force closure forces as a stacked vector of shape (M*D)
-        f = np.zeros(M*D)
+        w_coeffs = np.concatenate([
+            np.maximum(wrench_ext, 0),
+            np.maximum(-wrench_ext, 0)
+        ])
+        f = w_coeffs @ F
 
-  
         ########## Your code ends here ##########
 
         forces = [f_i for f_i in f.reshape(M,D)]
