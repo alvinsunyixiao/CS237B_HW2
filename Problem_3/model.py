@@ -1,4 +1,4 @@
-import tensorflow as tf 
+import tensorflow as tf
 
 DIM_IMG = (224, 224)
 
@@ -23,7 +23,7 @@ class AccelerationLaw(tf.keras.layers.Layer):
         mu, th = inputs
 
         ########## Your code starts here ##########
-        a = None  # TODO
+        a = self.g * (tf.sin(th) - mu * tf.cos(th))
         ########## Your code ends here ##########
 
         # Ensure output acceleration is positive
