@@ -1,7 +1,7 @@
 import re, glob, os, pdb
 
 import numpy as np
-import tensorflow as tf 
+import tensorflow as tf
 
 def load_accelerations(filename, dataset):
     accelerations_dict = {}

@@ -1,4 +1,5 @@
 import tensorflow as tf
+import tensorflow.keras as tfk
 
 DIM_IMG = (224, 224)
 
@@ -59,8 +60,34 @@ def build_model():
     # TODO: Create your neural network and replace the following two layers
     #       according to the given specification.
 
-    p_class = tf.keras.layers.Dense(1, name='p_class')(img_input)
-    mu = tf.keras.layers.Dense(1, name='mu')(p_class)
+    xb = tfk.layers.Conv2D(16, 7, 2, "same", activation="relu")(img_input)
+    x = tfk.layers.Conv2D(32, 5, 2, "same", activation="relu")(xb)
+    x1 = tfk.layers.Conv2D(32, 5, 1, "same")(x)
+    x2 = tfk.layers.Conv2D(32, 5, 2, "same")(xb)
+    x = tfk.layers.Add()([x1, x2])
+
+    xb = tfk.layers.ReLU()(x)
+    x = tfk.layers.Conv2D(64, 5, 2, "same", activation="relu")(xb)
+    x1 = tfk.layers.Conv2D(64, 5, 1, "same")(x)
+    x2 = tfk.layers.Conv2D(64, 5, 2, "same")(xb)
+    x = tfk.layers.Add()([x1, x2])
+
+    xb = tfk.layers.ReLU()(x)
+    x = tfk.layers.Conv2D(128, 3, 2, "same", activation="relu")(xb)
+    x1 = tfk.layers.Conv2D(128, 3, 1, "same")(x)
+    x2 = tfk.layers.Conv2D(128, 3, 2, "same")(xb)
+    x = tfk.layers.Add()([x1, x2])
+
+    xb = tfk.layers.ReLU()(x)
+    x = tfk.layers.Conv2D(256, 3, 2, "same", activation="relu")(xb)
+    x1 = tfk.layers.Conv2D(256, 3, 1, "same")(x)
+    x2 = tfk.layers.Conv2D(256, 3, 2, "same")(xb)
+    x = tfk.layers.Add()([x1, x2])
+
+    feats = tfk.layers.GlobalAvgPool2D()(x)
+
+    p_class = tfk.layers.Dense(32, "softmax", name="p_class")(feats)
+    mu = tfk.layers.Dense(1, use_bias=False, name="mu")(p_class)
 
     ########## Your code ends here ##########
 
@@ -89,6 +116,33 @@ def build_baseline_model():
 
     ########## Your code starts here ##########
     # TODO: Replace the following with your model from build_model().
+    xb = tfk.layers.Conv2D(16, 7, 2, "same", activation="relu")(img_input)
+    x = tfk.layers.Conv2D(32, 5, 2, "same", activation="relu")(xb)
+    x1 = tfk.layers.Conv2D(32, 5, 1, "same")(x)
+    x2 = tfk.layers.Conv2D(32, 5, 2, "same")(xb)
+    x = tfk.layers.Add()([x1, x2])
+
+    xb = tfk.layers.ReLU()(x)
+    x = tfk.layers.Conv2D(64, 5, 2, "same", activation="relu")(xb)
+    x1 = tfk.layers.Conv2D(64, 5, 1, "same")(x)
+    x2 = tfk.layers.Conv2D(64, 5, 2, "same")(xb)
+    x = tfk.layers.Add()([x1, x2])
+
+    xb = tfk.layers.ReLU()(x)
+    x = tfk.layers.Conv2D(128, 3, 2, "same", activation="relu")(xb)
+    x1 = tfk.layers.Conv2D(128, 3, 1, "same")(x)
+    x2 = tfk.layers.Conv2D(128, 3, 2, "same")(xb)
+    x = tfk.layers.Add()([x1, x2])
+
+    xb = tfk.layers.ReLU()(x)
+    x = tfk.layers.Conv2D(256, 3, 2, "same", activation="relu")(xb)
+    x1 = tfk.layers.Conv2D(256, 3, 1, "same")(x)
+    x2 = tfk.layers.Conv2D(256, 3, 2, "same")(xb)
+    x = tfk.layers.Add()([x1, x2])
+
+    feats = tfk.layers.GlobalAvgPool2D()(x)
+
+    a_pred = tfk.layers.Dense(1, name="a_pred")(feats)
 
     ########## Your code ends here ##########
 
@@ -100,7 +154,7 @@ def loss(a_actual, a_pred):
     """
 
     ########## Your code starts here ##########
-    l = None  # TODO
+    l = tf.nn.l2_loss(a_actual - a_pred)
     ########## Your code ends here ##########
 
     return l

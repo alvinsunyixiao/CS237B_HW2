@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
 import argparse
-import tensorflow as tf 
-import pdb 
-import os 
+import tensorflow as tf
+import pdb
+import os
 
 from model import build_model, build_baseline_model, loss
 import utils
